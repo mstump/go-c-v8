@@ -38,38 +38,49 @@ extern "C" {
 #include <stddef.h>
 #include <stdio.h>
 
-/*  Handle DSO symbol visibility                                             */
-#if defined _WIN32
-#   if defined GOCV8_STATIC
-#       define GOCV8_EXPORT
-#   elif defined DLL_EXPORT
-#       define GOCV8_EXPORT __declspec(dllexport)
-#   else
-#       define GOCV8_EXPORT __declspec(dllimport)
-#   endif
-#else
-#   if defined __SUNPRO_C  || defined __SUNPRO_CC
-#       define GOCV8_EXPORT __global
-#   elif (defined __GNUC__ && __GNUC__ >= 4) || defined __INTEL_COMPILER
-#       define GOCV8_EXPORT __attribute__ ((visibility("default")))
-#   else
-#       define GOCV8_EXPORT
-#   endif
+#ifndef __cplusplus
+typedef unsigned char bool;
+static const bool false = 0;
+static const bool true = 1;
 #endif
+
+/*  Handle DSO symbol visibility */
+#if defined _WIN32 || defined __CYGWIN__
+  #ifdef BUILDING_DLL
+    #ifdef __GNUC__
+      #define GOCV8_EXPORT __attribute__ ((dllexport))
+    #else
+      #define GOCV8_EXPORT __declspec(dllexport) // Note: actually gcc seems to also supports this syntax.
+    #endif
+  #else
+    #ifdef __GNUC__
+      #define GOCV8_EXPORT __attribute__ ((dllimport))
+    #else
+      #define GOCV8_EXPORT __declspec(dllimport) // Note: actually gcc seems to also supports this syntax.
+    #endif
+  #endif
+#else
+  #if __GNUC__ >= 4
+    #define GOCV8_EXPORT __attribute__ ((visibility ("default")))
+  #else
+    #define GOCV8_EXPORT
+  #endif
+#endif
+
 
 GOCV8_EXPORT void*
 gocv8_context_new();
 
 GOCV8_EXPORT void
 gocv8_context_free(
-void* context);
+    void* context);
 
 GOCV8_EXPORT bool
 gocv8_init(
     void*  context,
     void** status);
 
-GOCV8_EXPORT bool
+bool
 gocv8_process_event(
     void*       context,
     const char* event,
