@@ -11,3 +11,41 @@
 *.lai
 *.la
 *.a
+
+# cmake output
+CMakeFiles
+CMakeCache.txt
+CMakeScripts
+CTestTestfile.cmake
+Makefile
+cmake_install.cmake
+cmake_uninstall.cmake
+libmtn-config-version.cmake
+libmtn-config.cmake
+libmtn-targets.cmake
+install_manifest.txt
+
+# build files
+build/
+Testing/
+src/demo/mutton_demo
+test/unit/mutton_test
+ext/include/
+ext/share/
+ext/src/
+ext/tmp/
+ext/bin/
+ext/lib/
+ext/ssl/
+
+# editor
+*.swp
+*~
+.#*
+#*
+
+# demo data
+tmp
+
+# OSX
+.DS_Store
