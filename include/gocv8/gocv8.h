@@ -71,12 +71,12 @@ gocv8_init(
 
 GOCV8_EXPORT bool
 gocv8_process_event(
-    void*  context,
-    char*  event,
-    size_t event_size,
-    char*  js,
-    size_t js_size,
-    void** status);
+    void*       context,
+    const char* event,
+    size_t      event_size,
+    const char* js,
+    size_t      js_size,
+    void**      status);
 
 
 #undef GOCV8_EXPORT

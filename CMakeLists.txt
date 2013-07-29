@@ -2,16 +2,16 @@ CMAKE_MINIMUM_REQUIRED(VERSION 2.8.0)
 set(PROJECT_NAME_STR gocv8)
 project(${PROJECT_NAME_STR} C CXX)
 
-#-------------------
+#-------------------------------------------------------------------------------
 # The version number
-#-------------------
+#-------------------------------------------------------------------------------
 set (libgocv8_VERSION_MAJOR 0)
 set (libgocv8_VERSION_MINOR 5)
 set (libgocv8_VERSION_STRING ${libgocv8_VERSION_MAJOR}.${libgocv8_VERSION_MINOR})
 
-#-------------------
+#-------------------------------------------------------------------------------
 # setup deps
-#-------------------
+#-------------------------------------------------------------------------------
 set(EXT_PREFIX ${PROJECT_SOURCE_DIR}/ext)
 set(CMAKE_MODULE_PATH ${EXT_PREFIX})
 
@@ -34,12 +34,22 @@ set(LIBS ${LIBS} ${Boost_LIBRARIES} )
 set(V8_INCLUDE_NAMES v8.h v8-debug.h v8-profiler.h v8stdint.h)
 set(V8_LIBRARY_NAMES v8)
 
-find_path(V8_INCLUDE_DIR NAMES ${V8_INCLUDE_NAMES})
-find_library(V8_LIBRARY_PATH NAMES ${V8_LIBRARY_NAMES} NO_CMAKE_PATH)
+find_path(V8_INCLUDE_DIRS NAMES ${V8_INCLUDE_NAMES} HINTS /usr/include /usr/local/include)
+find_library(V8_LIBRARIES NAMES ${V8_LIBRARY_NAMES} HINTS /usr/include /usr/local/include)
 
-set(INCLUDES ${INCLUDES} ${V8_INCLUDE_DIR} )
-set(LIBS ${LIBS} ${V8_LIBRARIES} )
+if(V8_INCLUDE_DIRS AND V8_LIBRARIES)
+  set(V8_FOUND TRUE)
+  set(INCLUDES ${INCLUDES} ${V8_INCLUDE_DIR} )
+  set(LIBS ${LIBS} ${V8_LIBRARIES} )
+  message(STATUS "Found V8: ${V8_LIBRARIES}")
+else(V8_INCLUDE_DIRS AND V8_LIBRARIES)
+  message(FATAL_ERROR "Could not find V8 library.")
+endif(V8_INCLUDE_DIRS AND V8_LIBRARIES)
 
+
+#-------------------------------------------------------------------------------
+# build missing deps, if applicable
+#-------------------------------------------------------------------------------
 add_custom_target (AppDependencies ALL
   DEPENDS ${APP_DEPENDENCIES}
   COMMENT "Installing any missing dependencies.")
@@ -52,9 +62,9 @@ if(DEFINED ENV{VERBOSE})
   endforeach()
 endif()
 
-#-------------------
+#-------------------------------------------------------------------------------
 # libgocv8 static, shared and executable
-#-------------------
+#-------------------------------------------------------------------------------
 set(PROJECT_LIB_NAME ${PROJECT_NAME_STR})
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "build/bin/")
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/build/lib)
@@ -72,9 +82,9 @@ target_link_libraries(${PROJECT_LIB_NAME} ${LIBS})
 SET_TARGET_PROPERTIES(${PROJECT_LIB_NAME}-static PROPERTIES OUTPUT_NAME ${PROJECT_LIB_NAME})
 SET_TARGET_PROPERTIES(${PROJECT_LIB_NAME} PROPERTIES VERSION ${libgocv8_VERSION_MAJOR}.${libgocv8_VERSION_MINOR} SOVERSION ${libgocv8_VERSION_MAJOR})
 
-#-------------------
+#-------------------------------------------------------------------------------
 # Set compiler flags
-#-------------------
+#-------------------------------------------------------------------------------
 set(PROJECT_COMPILER_FLAGS "${CMAKE_CXX_FLAGS} -fPIC -Wall -pedantic -Wextra -Werror -Wno-long-long")
 
 set_property(
@@ -85,9 +95,9 @@ set_property(
   TARGET ${PROJECT_LIB_NAME}-static
   APPEND PROPERTY COMPILE_FLAGS ${PROJECT_COMPILER_FLAGS})
 
-#-------------------
+#-------------------------------------------------------------------------------
 # install target
-#-------------------
+#-------------------------------------------------------------------------------
 FILE(GLOB INSTALL_HEADERS "${PROJECT_INCLUDE_DIR}/gocv8/*.h")
 INSTALL(FILES ${INSTALL_HEADERS} DESTINATION include/gocv8)
 
@@ -96,9 +106,9 @@ INSTALL(TARGETS ${PROJECT_LIB_NAME}-static ${PROJECT_LIB_NAME}
   LIBRARY DESTINATION lib
   ARCHIVE DESTINATION lib)
 
-#-------------------
+#-------------------------------------------------------------------------------
 # uninstall target
-#-------------------
+#-------------------------------------------------------------------------------
 configure_file(
     "${CMAKE_CURRENT_SOURCE_DIR}/cmake_uninstall.cmake.in"
     "${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake"
@@ -107,13 +117,13 @@ configure_file(
 add_custom_target(uninstall
     COMMAND ${CMAKE_COMMAND} -P ${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake)
 
-#-------------------
+#-------------------------------------------------------------------------------
 # unit tests
-#-------------------
-# enable_testing()
-# add_subdirectory(test/unit)
+#-------------------------------------------------------------------------------
+enable_testing()
+add_subdirectory(test)
 
-#-------------------
+#-------------------------------------------------------------------------------
 # the demo program
-#-------------------
+#-------------------------------------------------------------------------------
 # add_subdirectory(src/demo EXCLUDE_FROM_ALL)
