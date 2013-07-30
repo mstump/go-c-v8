@@ -80,7 +80,7 @@ gocv8_init(
     void*  context,
     void** status);
 
-bool
+GOCV8_EXPORT bool
 gocv8_process_event(
     void*       context,
     const char* event,
