@@ -36,6 +36,7 @@ ext/bin/
 ext/lib/
 ext/ssl/
 test/gocv8_test
+main
 
 # editor
 *.swp

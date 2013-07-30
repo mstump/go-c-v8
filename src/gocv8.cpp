@@ -24,6 +24,7 @@
 
 */
 
+#include <iostream>
 #include <string>
 #include <v8.h>
 
@@ -119,6 +120,21 @@ wrap_event(
     return scope.Close(instance);
 }
 
+v8::Handle<v8::Value>
+log_callback(
+    const v8::Arguments& args)
+{
+    if (args.Length() < 1) {
+        return v8::Undefined();
+    }
+
+    v8::HandleScope scope(args.GetIsolate());
+    v8::Handle<v8::Value> arg = args[0];
+    v8::String::Utf8Value value(arg);
+    printf("v8-log: %s\n", *value);
+    return v8::Undefined();
+}
+
 bool
 gocv8_process_event(
     void*       context,
@@ -128,25 +144,54 @@ gocv8_process_event(
     size_t      js_size,
     void**      status)
 {
+    (void) context;
     (void) status;
 
     event_data_t event;
     event.data.assign(data, data_size);
 
-    v8::Context::Scope context_scope(static_cast<gocv8_context_t*>(context)->v8_context);
+    // Create a handle scope to hold the temporary references.
+    // this needs to be deleted
+    v8::HandleScope handle_scope(v8::Isolate::GetCurrent());
+
+    // Create a template for the global object where we set the
+    // TODO this is a memory leak
+    v8::Handle<v8::ObjectTemplate> global = v8::ObjectTemplate::New();
+    global->Set(v8::String::New("log"), v8::FunctionTemplate::New(log_callback));
+
+    // Each processor gets its own context so different processors don't
+    // affect each other. Context::New returns a persistent handle which
+    // is what we need for the reference to remain after we return from
+    // this method. That persistent handle has to be disposed in the
+    // destructor.
+    // TODO this is a memory leak
+    v8::Persistent<v8::Context> local_context = v8::Context::New(NULL, global);
+
+    // Enter the new context so all the following operations take place
+    // within it.
+    v8::Context::Scope context_scope(local_context);
 
     v8::Handle<v8::Object> js_event = wrap_event(&event);
-    static_cast<gocv8_context_t*>(context)->v8_context->Global()->Set(v8::String::New("event_data"), js_event, v8::ReadOnly);
+    local_context->Global()->Set(v8::String::New("event_data"), js_event, v8::ReadOnly);
+
+    // setup error handling
+    v8::TryCatch try_catch;
 
     // compile
     v8::Handle<v8::String> source = v8::String::New(js, js_size);
     v8::Handle<v8::Script> script = v8::Script::Compile(source);
+    if (script.IsEmpty()) {
+        v8::String::Utf8Value error(try_catch.Exception());
+        std::cerr << "v8-error: " << *error << std::endl;
+        return false;
+    }
 
     // run
     v8::Handle<v8::Value> result = script->Run();
-
-    // print
-    v8::String::AsciiValue ascii(result);
-    printf("%s\n", *ascii);
-    return false;
+    if (result.IsEmpty()) {
+        v8::String::Utf8Value error(try_catch.Exception());
+        std::cerr << "v8-error: " << *error << std::endl;
+        return false;
+    }
+    return true;
 }

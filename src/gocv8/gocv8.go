@@ -19,3 +19,9 @@ func FreeContext(ctx *GoCV8) {
 	C.gocv8_context_free(ctx.cptr)
 	ctx.cptr = nil
 }
+
+func ProcessEvent(ctx *GoCV8, event string, js string){
+	event_cstr := C.CString(event)
+	js_cstr := C.CString(js)
+	C.gocv8_process_event(ctx.cptr, event_cstr, C.size_t(len(event)), js_cstr, C.size_t(len(js)), nil)
+}
